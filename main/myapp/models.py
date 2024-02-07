@@ -8,7 +8,7 @@ class User(AbstractUser):
         ADMIN = 'admin'
         TEACHER = 'teacher'
         STUDENT = 'student'
-
+        
     role = models.CharField(max_length=10, choices=UserRole.choices, default=UserRole.STUDENT)
     id_user = models.IntegerField(unique=False, blank=True, null=True)
     birth_date = models.DateField(null=True)
@@ -20,6 +20,9 @@ class User(AbstractUser):
             count = User.objects.filter(role=self.role).count()
             self.id_user = count + 1
         super(User, self).save(*args, **kwargs)
+    
+    def __str__(self):
+        return self.first_name +" "+ self.last_name
 
 
 # cac models khac 
@@ -53,6 +56,8 @@ class StudyClass(ModelBase):
     semester = models.ForeignKey(Semester, on_delete=models.CASCADE)#nam hoc ky
     teacher = models.ForeignKey(User, on_delete=models.CASCADE, related_name='classrooms_as_teacher', limit_choices_to={'role': User.UserRole.TEACHER})
     students = models.ManyToManyField(User, related_name='classrooms_as_student', limit_choices_to={'role': User.UserRole.STUDENT})
+    course = models.ForeignKey(Course, on_delete=models.CASCADE)
+
     def __str__(self):
         return self.name
     
