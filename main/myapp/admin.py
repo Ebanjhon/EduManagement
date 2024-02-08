@@ -1,10 +1,20 @@
 from django.contrib import admin
+from django.utils.html import format_html
+
 from .models import User, StudyClass, Semester, ScoreColumn, ResultLearning, Course
 
 class UserAdmin(admin.ModelAdmin):
-    list_display = ["id","id_user", "username", "first_name", "last_name", "role"]
+    list_display = ["id","id_user", "username", "first_name", "last_name", "role", "avatar_image"]
     search_fields = ["id_user", "username"]
     list_filter = ["role"]
+
+    def avatar_image(self, obj):
+        if obj.avatar:
+            return format_html('<img src="{}" style="width: auto; height: 80px; object-fit: contain;" />', obj.avatar.url)
+        else:
+            return "No Image"
+
+    avatar_image.short_description = 'Avatar'
 
 class ResultLearningAdmin(admin.ModelAdmin):
     list_display = ["student", "study_class", "midterm_score", "final_score"]

@@ -11,6 +11,10 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 
 from pathlib import Path
+import cloudinary
+import cloudinary.uploader
+import cloudinary.api
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -82,13 +86,19 @@ WSGI_APPLICATION = 'main.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'mydb',
+        'NAME': 'edudb',
         'USER': 'root',
-        'PASSWORD': 'Admin@123',
+        'PASSWORD': '115116',
         'HOST': ''
     }
 }
 
+# cloudinary upload pic
+cloudinary.config(
+  cloud_name = "dfbykxwru",
+  api_key = "735743547192593",
+  api_secret = "YZdfya-GPtKUZyqws6jn1Afku5g"
+)
 
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators

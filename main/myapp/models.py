@@ -1,5 +1,6 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from cloudinary.models import CloudinaryField
 
 
 #class tai khoan
@@ -13,7 +14,7 @@ class User(AbstractUser):
     id_user = models.IntegerField(unique=False, blank=True, null=True)
     birth_date = models.DateField(null=True)
     address = models.CharField(max_length=128, null=True)
-    avatar = models.ImageField(upload_to='avatar/%Y/%m', null=True, blank=True)
+    avatar = CloudinaryField('image', null=True, blank=True)
 
     def save(self, *args, **kwargs):
         if self._state.adding and self.id_user is None:
