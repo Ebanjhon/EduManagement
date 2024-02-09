@@ -1,6 +1,8 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from cloudinary.models import CloudinaryField
+from django.core.validators import MinValueValidator, MaxValueValidator
+
 
 
 #class tai khoan
@@ -47,7 +49,7 @@ class Semester(ModelBase):
 #class mon hoc
 class Course(ModelBase):
     name = models.CharField(max_length=100, unique=True, null=False)
-    credit_hours = models.CharField(max_length=10, null=True)
+    credit_hours = models.IntegerField(default=2)
     def __str__(self):
         return self.name
     
@@ -64,8 +66,8 @@ class StudyClass(ModelBase):
     
 #class ket qua hoc tap
 class ResultLearning(ModelBase):
-    midterm_score = models.FloatField()
-    final_score = models.FloatField()
+    midterm_score = models.FloatField(validators=[MinValueValidator(0), MaxValueValidator(10)])
+    final_score = models.FloatField(validators=[MinValueValidator(0), MaxValueValidator(10)])
     is_draft = models.BooleanField(default=True)#Dùng để check xem đa luu chua
     study_class = models.ForeignKey(StudyClass, on_delete=models.CASCADE, null=True)#lop hoc
     student = models.ForeignKey(User, on_delete=models.CASCADE, related_name='resultlearning_as_student', 
@@ -79,5 +81,29 @@ class ResultLearning(ModelBase):
 #class cot diem cong
 class ScoreColumn(ModelBase):
     name_column = models.CharField(max_length = 50, null = False)
-    score = models.FloatField()
+    score = models.FloatField(validators=[MinValueValidator(0), MaxValueValidator(10)])
     result_learning = models.ForeignKey(ResultLearning, on_delete=models.CASCADE)#ket qua hoc tap
+
+# class dien dan hoc tap
+class Post(ModelBase):
+    title = models.CharField(max_length=200, null=True)
+    content = models.TextField()
+    user_post = models.ForeignKey(User, on_delete=models.CASCADE)
+    class_study = models.ForeignKey(StudyClass, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return self.title
+
+
+# class comments
+class Comment(ModelBase):
+    content = models.TextField()
+    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='comments')
+    parent_comment = models.ForeignKey('self', null=True, blank=True, on_delete=models.CASCADE, related_name='replies')
+    user_comment = models.ForeignKey(User, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return f'Comment: {self.content[:20]}...'
+
+    def get_replies(self):
+        return self.user_comment +" "+ self.content

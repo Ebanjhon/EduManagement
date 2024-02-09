@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.utils.html import format_html
 
-from .models import User, StudyClass, Semester, ScoreColumn, ResultLearning, Course
+from .models import User, StudyClass, Semester, ScoreColumn, ResultLearning, Course, Post, Comment
 
 class UserAdmin(admin.ModelAdmin):
     list_display = ["id","id_user", "username", "first_name", "last_name", "role", "avatar_image"]
@@ -53,3 +53,5 @@ admin.site.register(StudyClass, StudyClassAdmin)
 admin.site.register(Semester)
 admin.site.register(ResultLearning, ResultLearningAdmin)
 admin.site.register(Course, CourseAdmin)
+admin.site.register(Post)
+admin.site.register(Comment)
