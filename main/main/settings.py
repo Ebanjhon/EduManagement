@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'myapp.apps.MyappConfig',
     'rest_framework',
     'oauth2_provider',
+    'drf_yasg',
     
 ]
 
