@@ -1,3 +1,4 @@
+
 from rest_framework import viewsets, generics, permissions, response
 from rest_framework.response import Response
 
@@ -8,7 +9,6 @@ from  rest_framework.decorators import action
 
 
 class UserViewSet(viewsets.ViewSet, generics.CreateAPIView, generics.RetrieveAPIView):
-# class UserViewSet(viewsets.ModelViewSet, generics.ListAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
 
@@ -21,7 +21,15 @@ class UserViewSet(viewsets.ViewSet, generics.CreateAPIView, generics.RetrieveAPI
         serializer = StudyClassSerializerForUserOutCourse(study_classes, many=True)
         return Response(serializer.data)
 
+    def get_permissions(self):
+        if self.action.__eq__('current_user'):
+            return [permissions.IsAuthenticated()]
 
+        return [permissions.AllowAny()]
+
+    @action(methods=['get'], url_name='current-user', detail=False)
+    def current_user(self, request):
+        return Response(UserSerializer(request.user).data)
 
 class CourseViewSet(viewsets.ModelViewSet, generics.ListAPIView):
     queryset = Course.objects.filter(active=True).all()

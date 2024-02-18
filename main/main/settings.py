@@ -142,6 +142,10 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+CLIENT_ID ='jyJ1KdrEijbWPVvwC6Nvj6nfm45OS8PuNaoWxijZ'
+CLIENT_SECRECT ='tHYUiAoKWmNSjKTbLRvB2RPJCn771RrMmOrcRsUcwcPoomS0ai8RTadDHLqQjUa1wJs2LTvobUYy1CH934hLurq0rNRmzRmRP1KBY5YkyiChoKeXRpnEOsZ4xkEwW9ni'
+
+
 REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS':
     'rest_framework.pagination.PageNumberPagination',
