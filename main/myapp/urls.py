@@ -5,7 +5,9 @@ from . import views
 
 router = DefaultRouter()
 router.register('MonHoc', views.CourseViewSet, basename='courses')
-router.register('user', views.UserViewSet)
+router.register('User', views.UserViewSet)
+router.register('StudyClass', views.StudyClassViewSet)
+
 
 urlpatterns = [
     path('', include(router.urls))

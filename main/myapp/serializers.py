@@ -26,9 +26,17 @@ class SemesterSerializer(serializers.ModelSerializer):
         model = Semester
         fields = '__all__'
 class StudyClassSerializer(serializers.ModelSerializer):
-
+    semester = SemesterSerializer()  # Sử dụng SemesterSerializer
+    teacher = UserSerializer()  # Sử dụng UserSerializer cho giáo viên
+    #students = UserSerializer(many=True)  # Sử dụng UserSerializer cho sinh viên, nhớ thêm many=True
     course = CourseSerializer()
     class Meta:
         model = StudyClass
         fields = ['id', 'name', 'semester', 'teacher', 'students', 'course']
+# dành cho lấy tất cả khóa học mà sinh viên học
+class StudyClassSerializerForUserOutCourse(serializers.ModelSerializer):
+    course = CourseSerializer()
+    class Meta:
+        model = StudyClass
+        fields = [ 'course']
 
