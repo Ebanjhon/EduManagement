@@ -21,3 +21,14 @@ class CourseSerializer(serializers.ModelSerializer):
     class Meta:
         model = Course
         fields = '__all__'
+class SemesterSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Semester
+        fields = '__all__'
+class StudyClassSerializer(serializers.ModelSerializer):
+
+    course = CourseSerializer()
+    class Meta:
+        model = StudyClass
+        fields = ['id', 'name', 'semester', 'teacher', 'students', 'course']
+
