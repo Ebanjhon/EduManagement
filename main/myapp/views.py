@@ -52,7 +52,7 @@ class PostViewSet(viewsets.ViewSet, generics.DestroyAPIView, generics.UpdateAPIV
             return [permissions.IsAuthenticated()]
         return self.serializer_class
 
-    @action(methods=['post'], url_path='add_post', detail=True)
+    @action(methods=['post'], url_path='add_coment', detail=True)
     def add_coment(self, request, pk):
         p = Comment.objects.create(user_comment=request.user, post=self.get_object(),
                                 content=request.data.get('content'))
@@ -64,8 +64,10 @@ class StudyClassViewSet(viewsets.ModelViewSet, generics.ListAPIView):
 
     def get_permissions(self):
         if self.action in ['add_post']:
-            return [permissions.IsAuthenticated()]
-        return self.permissions_classes
+            permission_classes = [permissions.IsAuthenticated]
+        else:
+            permission_classes = [permissions.AllowAny]
+        return [permission() for permission in permission_classes]
 
 
 
