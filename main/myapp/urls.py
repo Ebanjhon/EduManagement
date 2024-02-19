@@ -8,6 +8,7 @@ router.register('Course', views.CourseViewSet, basename='courses')
 router.register('User', views.UserViewSet)
 router.register('StudyClass', views.StudyClassViewSet)
 router.register('Post', views.PostViewSet,  basename='Post')
+router.register('comments', views.CommentViewSet, basename='comments')
 
 
 
