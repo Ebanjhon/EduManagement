@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User, StudyClass, Semester, ScoreColumn, ResultLearning, Course
+from .models import User, StudyClass, Semester, ScoreColumn, ResultLearning, Course, Post, Comment
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -40,3 +40,8 @@ class StudyClassSerializerForUserOutCourse(serializers.ModelSerializer):
         model = StudyClass
         fields = [ 'course']
 
+class PostSerializer(serializers.ModelSerializer):
+    user_post = UserSerializer()
+    class Meta:
+        model = Post
+        fields = ['id', 'content', 'user_post']
