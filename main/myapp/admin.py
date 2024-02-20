@@ -1,5 +1,6 @@
 from django.contrib import admin
 from django.utils.html import format_html
+from django.contrib.auth.models import Permission
 
 from .models import User, StudyClass, Semester, ScoreColumn, ResultLearning, Course, Post, Comment
 
@@ -55,3 +56,4 @@ admin.site.register(ResultLearning, ResultLearningAdmin)
 admin.site.register(Course, CourseAdmin)
 admin.site.register(Post)
 admin.site.register(Comment)
+admin.site.register(Permission)
