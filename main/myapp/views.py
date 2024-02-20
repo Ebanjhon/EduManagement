@@ -7,8 +7,8 @@ from . import perms
 from .paginators import CoursePaginator
 from .perms import IsOwnerOrReadOnly
 from .serializers import CourseSerializer, UserSerializer, StudyClassSerializer, StudyClassSerializerForUserOutCourse, \
-    PostSerializer, CommentSerializer
-from .models import Course, User, StudyClass, Post, Comment
+    PostSerializer, CommentSerializer, ResultLearningSerializer, ScoreColumnSerializer
+from .models import Course, User, StudyClass, Post, Comment, ResultLearning, ScoreColumn
 from  rest_framework.decorators import action
 
 
@@ -70,6 +70,13 @@ class StudyClassViewSet(viewsets.ModelViewSet, generics.ListAPIView):
         return [permission() for permission in permission_classes]
 
 
+    @action(methods=['get'], detail=True)
+    def get_result_learning(self, request, pk):
+        resultLearning = self.get_object().resultlearning_as_studyClass.filter(active=True).all()
+
+        return Response(ResultLearningSerializer(resultLearning, many=True).data, status=status.HTTP_200_OK)
+
+
 
     @action(methods=['post'], url_path='add_post', detail=True)
     def add_post(self, request, pk):
@@ -96,3 +103,11 @@ class CommentViewSet(viewsets.ModelViewSet):
             post = parent_comment.post
         )
         return Response(CommentSerializer(reply).data, status=status.HTTP_201_CREATED)
+class ResultLearningViewSet(viewsets.ModelViewSet, generics.ListAPIView):
+    queryset = ResultLearning.objects.filter(active=True).all()
+    serializer_class = ResultLearningSerializer
+
+
+class ScoreColumnViewSet(viewsets.ModelViewSet, generics.RetrieveAPIView):
+    queryset = ScoreColumn.objects.filter(active=True).all()
+    serializer_class = ScoreColumnSerializer

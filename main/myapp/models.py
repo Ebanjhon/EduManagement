@@ -66,13 +66,15 @@ class StudyClass(ModelBase):
 
     def __str__(self):
         return self.name
+
+
     
 #class ket qua hoc tap
 class ResultLearning(ModelBase):
     midterm_score = models.FloatField(validators=[MinValueValidator(0), MaxValueValidator(10)])
     final_score = models.FloatField(validators=[MinValueValidator(0), MaxValueValidator(10)])
     is_draft = models.BooleanField(default=True)#Dùng để check xem đa luu chua
-    study_class = models.ForeignKey(StudyClass, on_delete=models.CASCADE, null=True)#lop hoc
+    study_class = models.ForeignKey(StudyClass, on_delete=models.CASCADE, null=True, related_name='resultlearning_as_studyClass')#lop hoc
     student = models.ForeignKey(User, on_delete=models.CASCADE, related_name='resultlearning_as_student', 
                                 limit_choices_to={'role': User.UserRole.STUDENT},
                                 null=True)
@@ -85,7 +87,7 @@ class ResultLearning(ModelBase):
 class ScoreColumn(ModelBase):
     name_column = models.CharField(max_length = 50, null = False)
     score = models.FloatField(validators=[MinValueValidator(0), MaxValueValidator(10)])
-    result_learning = models.ForeignKey(ResultLearning, on_delete=models.CASCADE)#ket qua hoc tap
+    result_learning = models.ForeignKey(ResultLearning, on_delete=models.CASCADE, related_name='score_columns')#ket qua hoc tap
 
 # class dien dan hoc tap
 class Post(ModelBase):

@@ -51,3 +51,14 @@ class CommentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Comment
         fields = '__all__'
+
+class ScoreColumnSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ScoreColumn
+        fields = ['id', 'name_column', 'score', 'result_learning']
+
+class ResultLearningSerializer(serializers.ModelSerializer):
+    score_columns = ScoreColumnSerializer(many=True, read_only=True)
+    class Meta:
+        model = ResultLearning
+        fields = ['midterm_score', 'final_score', 'score_columns', 'study_class', 'student']
