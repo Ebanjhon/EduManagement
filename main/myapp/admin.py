@@ -5,9 +5,15 @@ from django.contrib.auth.models import Permission
 from .models import User, StudyClass, Semester, ScoreColumn, ResultLearning, Course, Post, Comment
 
 class UserAdmin(admin.ModelAdmin):
-    list_display = ["id","id_user", "username", "first_name", "last_name", "role", "avatar_image"]
+    list_display = ["id", "id_user", "username", "first_name", "last_name", "role", "avatar_image"]
     search_fields = ["id_user", "username"]
     list_filter = ["role"]
+
+    # băm mk do băm bị lỗi
+    def save_model(self, request, obj, form, change):
+        if not change or 'password' in form.changed_data:
+            obj.set_password(obj.password)
+        super().save_model(request, obj, form, change)
 
     def avatar_image(self, obj):
         if obj.avatar:

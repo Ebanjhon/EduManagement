@@ -3,12 +3,23 @@ from .models import User, StudyClass, Semester, ScoreColumn, ResultLearning, Cou
 
 
 class UserSerializer(serializers.ModelSerializer):
+    avatar = serializers.SerializerMethodField(source='avatar')
+
+    def get_avatar(self, User):
+        request = self.context.get('request')
+        if User.avatar:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri('/static/%s' % User.avatar.name)
+            return '/static/%s' % User.avatar.name
+
     class Meta:
         model = User
-        fields = ['id', 'username', 'first_name', 'last_name', 'email', 'password']
+        fields = ['id', 'username', 'first_name', 'last_name', 'email', 'password', 'avatar']
         # fields = '__all__'
 
     # ghi de bam mat khau
+
     def create(self, validated_data):
         user = User(**validated_data)
         user.set_password(validated_data['password'])
@@ -18,6 +29,17 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class CourseSerializer(serializers.ModelSerializer):
+    image = serializers.SerializerMethodField(source='image')
+
+
+    def get_image(self, Course):
+        request = self.context.get('request')
+        if Course.image:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri('/static/%s' % Course.image.name)
+            return '/static/%s' % Course.image.name
+
     class Meta:
         model = Course
         fields = '__all__'
