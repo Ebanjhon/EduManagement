@@ -15,7 +15,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['id', 'username', 'first_name', 'last_name', 'email', 'password', 'avatar']
+        fields = ['id', 'username', 'first_name', 'last_name', 'email', 'password', 'avatar', 'role']
         # fields = '__all__'
 
     # ghi de bam mat khau
@@ -56,6 +56,8 @@ class StudyClassSerializer(serializers.ModelSerializer):
         model = StudyClass
         fields = ['id', 'name', 'semester', 'teacher', 'students', 'course']
 # dành cho lấy tất cả khóa học mà sinh viên học
+
+
 class StudyClassSerializerForUserOutCourse(serializers.ModelSerializer):
     course = CourseSerializer()
     class Meta:
@@ -66,7 +68,7 @@ class PostSerializer(serializers.ModelSerializer):
     user_post = UserSerializer()
     class Meta:
         model = Post
-        fields = ['id', 'content', 'user_post']
+        fields = ['id', 'title', 'content', 'user_post']
 class CommentSerializer(serializers.ModelSerializer):
     user_comment = UserSerializer(read_only=True)
 

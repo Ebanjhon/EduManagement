@@ -2,14 +2,17 @@
 from rest_framework import viewsets, generics, permissions, response, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from django.http import HttpResponse
+import csv
 
 from . import perms
 from .paginators import CoursePaginator
 from .perms import IsOwnerOrReadOnly
 from .serializers import CourseSerializer, UserSerializer, StudyClassSerializer, StudyClassSerializerForUserOutCourse, \
-    PostSerializer, CommentSerializer, ResultLearningSerializer, ScoreColumnSerializer
-from .models import Course, User, StudyClass, Post, Comment, ResultLearning, ScoreColumn
+    PostSerializer, CommentSerializer, ResultLearningSerializer, ScoreColumnSerializer, SemesterSerializer
+from .models import Course, User, StudyClass, Post, Comment, ResultLearning, ScoreColumn, Semester
 from  rest_framework.decorators import action
+from reportlab.pdfgen import canvas
 
 
 class UserViewSet(viewsets.ViewSet, generics.CreateAPIView, generics.RetrieveAPIView):
@@ -24,6 +27,23 @@ class UserViewSet(viewsets.ViewSet, generics.CreateAPIView, generics.RetrieveAPI
         study_classes = StudyClass.objects.filter(students=user)
         serializer = StudyClassSerializerForUserOutCourse(study_classes, many=True)
         return Response(serializer.data)
+
+    @action(detail=True, methods=['get'], url_name='get_studyclass')
+    def get_studyclass(self, request, pk=None):
+        user = self.get_object()
+        # Đối với giáo viên, lấy lớp học mà họ dạy
+        if user.role == User.UserRole.TEACHER:
+            study_classes_as_teacher = StudyClass.objects.filter(teacher=user, active=True)
+            serializer = StudyClassSerializer(study_classes_as_teacher, many=True)
+        # Đối với sinh viên, lấy lớp học mà họ tham gia
+        elif user.role == User.UserRole.STUDENT:
+            study_classes_as_student = StudyClass.objects.filter(students=user, active=True)
+            serializer = StudyClassSerializer(study_classes_as_student, many=True)
+        else:
+            return Response({"error": "User không phải là giáo viên hoặc sinh viên trong bất kỳ lớp học nào."},
+                            status=status.HTTP_404_NOT_FOUND)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def get_permissions(self):
         if self.action.__eq__('current_user'):
@@ -69,14 +89,92 @@ class StudyClassViewSet(viewsets.ModelViewSet, generics.ListAPIView):
             permission_classes = [permissions.AllowAny]
         return [permission() for permission in permission_classes]
 
+    @action(methods=['get'], detail=True, url_path='export_grades')
+    def export_grades(self, request, pk=None):
+        # In ra toàn bộ query params để debug
+        print("All query parameters:", request.query_params)
 
+        study_class = self.get_object()
+        if request.user != study_class.teacher:
+            return Response({"message": "Bạn không có quyền xuất bảng điểm cho lớp học này."},
+                            status=status.HTTP_403_FORBIDDEN)
+
+        result_learnings = study_class.resultlearning_as_studyClass.all()
+        file_format = request.query_params.get('format', 'csv')
+        print("Chosen format:", file_format)
+
+        print("Chosen format:", file_format)  # Debug để xem giá trị của format
+
+        if file_format == 'pdf':
+            return self.generate_pdf(result_learnings)
+        else:
+            return self.generate_csv(result_learnings, study_class)
+
+    def generate_csv(self, result_learnings, study_class):
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = f'attachment; filename="{study_class.name}_grades.csv"'
+
+        writer = csv.writer(response)
+        # Thêm các tiêu đề cột cho ScoreColumns
+        header_row = ['Học Sinh', 'Điểm Giữa Kỳ', 'Điểm Cuối Kỳ']
+        #  lấy mẫu từ đầu tiên
+        if result_learnings:
+            sample_result = result_learnings.first()
+            score_columns = sample_result.score_columns.all()
+            for sc in score_columns:
+                header_row.append(sc.name_column)
+        writer.writerow(header_row)
+
+        for result in result_learnings:
+            row = [
+                result.student.get_full_name(),
+                result.midterm_score,
+                result.final_score,
+            ]
+            # Thêm điểm từ các ScoreColumn
+            for sc in result.score_columns.all():
+                row.append(sc.score)
+            writer.writerow(row)
+
+        return response
+
+    def generate_pdf(self, result_learnings):
+        response = HttpResponse(content_type='application/pdf')
+        response['Content-Disposition'] = 'attachment; filename="grades.pdf"'
+
+        p = canvas.Canvas(response)
+        y = 800  # Vị trí Y bắt đầu
+        # Thêm tiêu đề
+        p.drawString(100, y, "Học Sinh - Điểm Giữa Kỳ - Điểm Cuối Kỳ - [Các ScoreColumn]")
+        y -= 20
+
+        for result in result_learnings:
+            text = f"{result.student.get_full_name()} - {result.midterm_score} - {result.final_score}"
+            # Thêm điểm từ các ScoreColumn vào cuối chuỗi
+            for sc in result.score_columns.all():
+                text += f" - {sc.name_column}: {sc.score}"
+            p.drawString(100, y, text)
+            y -= 20  # Di chuyển xuống dòng tiếp theo
+
+            if y < 100:  # Kiểm tra nếu y quá thấp, tạo trang mới
+                p.showPage()
+                y = 800
+
+        p.showPage()
+        p.save()
+        return response
+    # /studyclass/{id_lớp_học}/export_grades?format=csv hoặc /studyclass/{id_lớp_học}/export_grades?format=pdf
     @action(methods=['get'], detail=True)
     def get_result_learning(self, request, pk):
         resultLearning = self.get_object().resultlearning_as_studyClass.filter(active=True).all()
 
         return Response(ResultLearningSerializer(resultLearning, many=True).data, status=status.HTTP_200_OK)
 
+    @action(methods=['get'], detail=True,  url_path='get_post')
+    def get_post(self, request, pk):
+        posts = self.get_object().post_as_studyclass.filter(active=True).all()
 
+        return Response(PostSerializer(posts, many=True).data, status=status.HTTP_200_OK)
 
     @action(methods=['post'], url_path='add_post', detail=True)
     def add_post(self, request, pk):
@@ -111,3 +209,15 @@ class ResultLearningViewSet(viewsets.ModelViewSet, generics.ListAPIView):
 class ScoreColumnViewSet(viewsets.ModelViewSet, generics.RetrieveAPIView):
     queryset = ScoreColumn.objects.filter(active=True).all()
     serializer_class = ScoreColumnSerializer
+
+
+class SemesterViewSet(viewsets.ModelViewSet, generics.RetrieveAPIView):
+    queryset = Semester.objects.filter(active=True).all()
+    serializer_class = SemesterSerializer
+
+    @action(methods=['get'], detail=True, url_path='get_studyclass')
+    def get_studyclass(self, request, pk):
+        studycalass = self.get_object().classrooms_as_semester.filter(active=True).all()
+
+        return Response(StudyClassSerializer(studycalass, many=True).data, status=status.HTTP_200_OK)
+

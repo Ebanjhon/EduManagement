@@ -10,3 +10,16 @@ class IsOwnerOrReadOnly(permissions.BasePermission):
         if request.method in permissions.SAFE_METHODS:
             return True
         return obj.user_comment == request.user
+
+
+class IsAdminUser(permissions.BasePermission):
+    def has_permission(self, request, view):
+        return request.user.role == 'admin'
+
+class IsTeacherUser(permissions.BasePermission):
+    def has_permission(self, request, view):
+        return request.user.role == 'teacher'
+
+class IsStudentUser(permissions.BasePermission):
+    def has_permission(self, request, view):
+        return request.user.role == 'student'

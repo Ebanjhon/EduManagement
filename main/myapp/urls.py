@@ -11,6 +11,10 @@ router.register('Post', views.PostViewSet,  basename='Post')
 router.register('Comments', views.CommentViewSet, basename='comments')
 router.register('ResultLearning', views.ResultLearningViewSet, basename='ResultLearning')
 router.register('ScoreColumn', views.ScoreColumnViewSet, basename='ScoreColumn')
+router.register('Semester', views.SemesterViewSet, basename='Semester')
+
+
+
 
 
 

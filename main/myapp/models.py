@@ -59,7 +59,7 @@ class Course(ModelBase):
 # class lop hoc
 class StudyClass(ModelBase):
     name = models.CharField(max_length=100, unique=False, null=False)
-    semester = models.ForeignKey(Semester, on_delete=models.CASCADE)  # nam hoc ky
+    semester = models.ForeignKey(Semester, on_delete=models.CASCADE, related_name='classrooms_as_semester')  # nam hoc ky
     teacher = models.ForeignKey(User, on_delete=models.CASCADE, related_name='classrooms_as_teacher',
                                 limit_choices_to={'role': User.UserRole.TEACHER})
     students = models.ManyToManyField(User, related_name='classrooms_as_student',
@@ -98,10 +98,10 @@ class Post(ModelBase):
     title = models.CharField(max_length=200, null=True)
     content = models.TextField()
     user_post = models.ForeignKey(User, on_delete=models.CASCADE)
-    class_study = models.ForeignKey(StudyClass, on_delete=models.CASCADE)
+    class_study = models.ForeignKey(StudyClass, on_delete=models.CASCADE, related_name='post_as_studyclass')
 
     def __str__(self):
-        return self.title
+        return self.title if self.title else "Untitled Post"
 
 
 # class comments
