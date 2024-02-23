@@ -15,7 +15,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['id', 'username', 'first_name', 'last_name', 'email', 'password', 'avatar', 'role']
+        fields = ['id', 'username', 'first_name', 'last_name', 'email', 'password', 'avatar', 'role', 'birth_date', 'address']
         # fields = '__all__'
 
     # ghi de bam mat khau
@@ -58,11 +58,22 @@ class StudyClassSerializer(serializers.ModelSerializer):
 # dành cho lấy tất cả khóa học mà sinh viên học
 
 
+class StudyClassSerializerForGetStudyClass(serializers.ModelSerializer):
+    semester = SemesterSerializer()  # Sử dụng SemesterSerializer
+    course = CourseSerializer()
+
+    class Meta:
+        model = StudyClass
+        fields = ['id', 'name', 'semester', 'course']  # Loại bỏ 'students' từ fields
+
+
 class StudyClassSerializerForUserOutCourse(serializers.ModelSerializer):
     course = CourseSerializer()
     class Meta:
         model = StudyClass
         fields = [ 'course']
+
+
 
 class PostSerializer(serializers.ModelSerializer):
     user_post = UserSerializer()
@@ -70,6 +81,12 @@ class PostSerializer(serializers.ModelSerializer):
     class Meta:
         model = Post
         fields = ['id', 'title', 'content', 'user_post', 'class_study']
+
+
+class PostSerializerForGetPost(serializers.ModelSerializer):
+    class Meta:
+        model = Post
+        fields = ['id', 'title', 'content']
 class CommentSerializer(serializers.ModelSerializer):
     user_comment = UserSerializer(read_only=True)
 

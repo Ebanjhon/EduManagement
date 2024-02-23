@@ -9,7 +9,8 @@ from . import perms
 from .paginators import CoursePaginator
 from .perms import IsOwnerOrReadOnly
 from .serializers import CourseSerializer, UserSerializer, StudyClassSerializer, StudyClassSerializerForUserOutCourse, \
-    PostSerializer, CommentSerializer, ResultLearningSerializer, ScoreColumnSerializer, SemesterSerializer
+    PostSerializer, CommentSerializer, ResultLearningSerializer, ScoreColumnSerializer, SemesterSerializer, \
+    StudyClassSerializerForGetStudyClass, PostSerializerForGetPost
 from .models import Course, User, StudyClass, Post, Comment, ResultLearning, ScoreColumn, Semester
 from  rest_framework.decorators import action
 from reportlab.pdfgen import canvas
@@ -34,11 +35,11 @@ class UserViewSet(viewsets.ViewSet, generics.CreateAPIView, generics.RetrieveAPI
         # Đối với giáo viên, lấy lớp học mà họ dạy
         if user.role == User.UserRole.TEACHER:
             study_classes_as_teacher = StudyClass.objects.filter(teacher=user, active=True)
-            serializer = StudyClassSerializer(study_classes_as_teacher, many=True)
+            serializer = StudyClassSerializerForGetStudyClass(study_classes_as_teacher, many=True)
         # Đối với sinh viên, lấy lớp học mà họ tham gia
         elif user.role == User.UserRole.STUDENT:
             study_classes_as_student = StudyClass.objects.filter(students=user, active=True)
-            serializer = StudyClassSerializer(study_classes_as_student, many=True)
+            serializer = StudyClassSerializerForGetStudyClass(study_classes_as_student, many=True)
         else:
             return Response({"error": "User không phải là giáo viên hoặc sinh viên trong bất kỳ lớp học nào."},
                             status=status.HTTP_404_NOT_FOUND)
@@ -68,17 +69,23 @@ class PostViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.AllowAny]
 
     def get_permissions(self):
-        if self.action in ['add_coment']:
+        if self.action in ['add_comment']:
             permission_classes = [permissions.IsAuthenticated, perms.UserinClassForCmt]
         else:
             permission_classes = [permissions.AllowAny]
         return [permission() for permission in permission_classes]
 
-    @action(methods=['post'], url_path='add_coment', detail=True)
-    def add_coment(self, request, pk):
+    @action(methods=['post'], url_path='add_comment', detail=True)
+    def add_comment(self, request, pk):
         p = Comment.objects.create(user_comment=request.user, post=self.get_object(),
-                                content=request.data.get('content'))
+                                   content=request.data.get('content'))
         return Response(CommentSerializer(p).data, status=status.HTTP_201_CREATED)
+
+    @action(methods=['get'], url_path='get_comments', detail=True)
+    def get_comments(self, request, pk):
+        comments = self.get_object().comments.filter(active=True).all()
+
+        return Response(CommentSerializer(comments, many=True).data, status=status.HTTP_200_OK)
 class StudyClassViewSet(viewsets.ModelViewSet, generics.ListAPIView):
     queryset = StudyClass.objects.filter(active=True).all()
     serializer_class = StudyClassSerializer
@@ -166,22 +173,64 @@ class StudyClassViewSet(viewsets.ModelViewSet, generics.ListAPIView):
         p.save()
         return response
     # /studyclass/{id_lớp_học}/export_grades?format=csv hoặc /studyclass/{id_lớp_học}/export_grades?format=pdf
-    @action(methods=['get'], detail=True)
+
+
+    @action(methods=['get'], detail=True, url_path='get_result_learning')
     def get_result_learning(self, request, pk):
         resultLearning = self.get_object().resultlearning_as_studyClass.filter(active=True).all()
 
         return Response(ResultLearningSerializer(resultLearning, many=True).data, status=status.HTTP_200_OK)
 
+    @action(methods=['get'], detail=True, url_path='get_student_results')
+    def get_student_results(self, request, pk=None):
+        student_id = request.query_params.get('student_id')
+        if not student_id:
+            return Response({"error": "Student ID is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        study_class = self.get_object()
+        try:
+            student = study_class.students.get(id=student_id)
+        except User.DoesNotExist:
+            return Response({"error": "Student not found in this class."}, status=status.HTTP_404_NOT_FOUND)
+
+        result_learnings = study_class.resultlearning_as_studyClass.filter(student=student)
+
+        serializer = ResultLearningSerializer(result_learnings, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    @action(methods=['get'], detail=True, url_path='get_teacher')
+    def get_teacher(self, request, pk):
+        # Lấy đối tượng StudyClass dựa trên khóa chính (pk) được cung cấp.
+        study_class = self.get_queryset().get(pk=pk)
+        # Lấy thông tin giáo viên thông qua trường 'teacher'.
+        teacher = study_class.teacher
+
+        # Serialize thông tin của giáo viên.
+        serializer = UserSerializer(teacher, context={'request': request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @action(methods=['get'], detail=True, url_path='get_sudents')
+    def get_students(self, request, pk):
+        # Lấy đối tượng class hiện tại
+        study_class = self.get_queryset().get(pk=pk)
+        # Sử dụng related_name `classrooms_as_student` để truy vấn các học sinh.
+        students = study_class.students.filter(classrooms_as_student__active=True).distinct()
+
+        # Serialize thông tin của học sinh.
+        serializer = UserSerializer(students, many=True, context={'request': request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
     @action(methods=['get'], detail=True,  url_path='get_post')
     def get_post(self, request, pk):
         posts = self.get_object().post_as_studyclass.filter(active=True).all()
 
-        return Response(PostSerializer(posts, many=True).data, status=status.HTTP_200_OK)
+        return Response(PostSerializerForGetPost(posts, many=True).data, status=status.HTTP_200_OK)
 
     @action(methods=['post'], url_path='add_post', detail=True)
     def add_post(self, request, pk):
         p = Post.objects.create(user_post=request.user, class_study=self.get_object(), content=request.data.get('content'))
         return Response(PostSerializer(p).data, status=status.HTTP_201_CREATED)
+
+
 class CommentViewSet(viewsets.ModelViewSet):
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
