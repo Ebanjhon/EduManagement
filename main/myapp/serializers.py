@@ -50,7 +50,7 @@ class SemesterSerializer(serializers.ModelSerializer):
 class StudyClassSerializer(serializers.ModelSerializer):
     semester = SemesterSerializer()  # Sử dụng SemesterSerializer
     teacher = UserSerializer()  # Sử dụng UserSerializer cho giáo viên
-    #students = UserSerializer(many=True)  # Sử dụng UserSerializer cho sinh viên, nhớ thêm many=True
+    students = UserSerializer(many=True)  # Sử dụng UserSerializer cho sinh viên, nhớ thêm many=True
     course = CourseSerializer()
     class Meta:
         model = StudyClass
@@ -66,9 +66,10 @@ class StudyClassSerializerForUserOutCourse(serializers.ModelSerializer):
 
 class PostSerializer(serializers.ModelSerializer):
     user_post = UserSerializer()
+    class_study = StudyClassSerializer()
     class Meta:
         model = Post
-        fields = ['id', 'title', 'content', 'user_post']
+        fields = ['id', 'title', 'content', 'user_post', 'class_study']
 class CommentSerializer(serializers.ModelSerializer):
     user_comment = UserSerializer(read_only=True)
 

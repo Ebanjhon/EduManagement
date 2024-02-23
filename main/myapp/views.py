@@ -62,15 +62,17 @@ class CourseViewSet(viewsets.ModelViewSet, generics.ListAPIView):
     # permission_classes = [permissions.IsAuthenticated]
 
 
-class PostViewSet(viewsets.ViewSet, generics.DestroyAPIView, generics.UpdateAPIView):
-    queryset = Post.objects.all()
+class PostViewSet(viewsets.ModelViewSet):
+    queryset = Post.objects.filter(active=True).all()
     serializer_class = PostSerializer
-    permission_classes = [perms.OwnerAuthenticated]
+    permission_classes = [permissions.AllowAny]
 
     def get_permissions(self):
         if self.action in ['add_coment']:
-            return [permissions.IsAuthenticated()]
-        return self.serializer_class
+            permission_classes = [permissions.IsAuthenticated, perms.UserinClassForCmt]
+        else:
+            permission_classes = [permissions.AllowAny]
+        return [permission() for permission in permission_classes]
 
     @action(methods=['post'], url_path='add_coment', detail=True)
     def add_coment(self, request, pk):
@@ -84,7 +86,7 @@ class StudyClassViewSet(viewsets.ModelViewSet, generics.ListAPIView):
 
     def get_permissions(self):
         if self.action in ['add_post']:
-            permission_classes = [permissions.IsAuthenticated]
+            permission_classes = [permissions.IsAuthenticated, perms.UserinClassForPost]
         else:
             permission_classes = [permissions.AllowAny]
         return [permission() for permission in permission_classes]
@@ -198,7 +200,7 @@ class CommentViewSet(viewsets.ModelViewSet):
             content=reply_content,
             parent_comment=comment,
             user_comment=request.user,
-            post = parent_comment.post
+            post=parent_comment.post
         )
         return Response(CommentSerializer(reply).data, status=status.HTTP_201_CREATED)
 class ResultLearningViewSet(viewsets.ModelViewSet, generics.ListAPIView):
