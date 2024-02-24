@@ -3,28 +3,54 @@ from .models import User, StudyClass, Semester, ScoreColumn, ResultLearning, Cou
 
 
 class UserSerializer(serializers.ModelSerializer):
-    avatar = serializers.SerializerMethodField(source='avatar')
-
-    def get_avatar(self, User):
-        request = self.context.get('request')
-        if User.avatar:
-            request = self.context.get('request')
-            if request:
-                return request.build_absolute_uri('/static/%s' % User.avatar.name)
-            return '/static/%s' % User.avatar.name
+    avatar = serializers.ImageField(required=True)  # Đây là trường để upload ảnh
+    avatar_url = serializers.SerializerMethodField()  # Đây là trường để trả về URL đầy đủ của ảnh
 
     class Meta:
         model = User
-        fields = ['id', 'username', 'first_name', 'last_name', 'email', 'password', 'avatar', 'role', 'birth_date', 'address']
+        fields = ['id', 'username', 'first_name', 'last_name', 'email', 'password', 'avatar','avatar_url', 'role', 'birth_date',
+                  'address']
         # fields = '__all__'
+        extra_kwargs = {'password': {'write_only': True}}
 
+    def get_avatar_url(self, obj):
+        """Trả về URL đầy đủ cho ảnh avatar."""
+        request = self.context.get('request')
+        if obj.avatar:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri('/static/%s' % obj.avatar.name)
+            return '/static/%s' % User.avatar.name
+
+    # # avatar = serializers.SerializerMethodField(source='avatar')
+    # avatar = serializers.ImageField(required=True)
+    #
+    # def get_avatar(self, User):
+    #     request = self.context.get('request')
+    #     if User.avatar:
+    #         request = self.context.get('request')
+    #         if request:
+    #             return request.build_absolute_uri('/static/%s' % User.avatar.name)
+    #         return '/static/%s' % User.avatar.name
+    #
     # ghi de bam mat khau
+    def validate_email(self, value):
+        """
+        Kiểm tra định dạng email.
+        """
+        if not value.endswith('@ou.edu.vn'):
+            raise serializers.ValidationError("Email không thuộc OU.edu VD: truongdaihocmo@ou.edu.vn")
+        return value
 
     def create(self, validated_data):
-        user = User(**validated_data)
+        """
+                Tạo user với role mặc định là STUDENT và kiểm tra avatar.
+                """
+        validated_data['role'] = User.UserRole.STUDENT  # Thiết lập role mặc định là STUDENT
+        # Thêm logic kiểm tra avatar tại đây nếu cần
+        user = User.objects.create_user(**validated_data)
         user.set_password(validated_data['password'])
         user.save()
-
         return user
 
 

@@ -11,6 +11,7 @@ class User(AbstractUser):
         TEACHER = 'teacher'
         STUDENT = 'student'
 
+    email = models.EmailField(("email address"), blank=False, null=False)
     role = models.CharField(max_length=10, choices=UserRole.choices, default=UserRole.STUDENT)
     id_user = models.IntegerField(unique=False, blank=True, null=True)
     birth_date = models.DateField(null=True)

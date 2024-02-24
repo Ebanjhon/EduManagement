@@ -271,4 +271,3 @@ class SemesterViewSet(viewsets.ModelViewSet, generics.RetrieveAPIView):
         studycalass = self.get_object().classrooms_as_semester.filter(active=True).all()
 
         return Response(StudyClassSerializer(studycalass, many=True).data, status=status.HTTP_200_OK)
-
