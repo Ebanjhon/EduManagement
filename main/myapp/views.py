@@ -10,7 +10,7 @@ from .paginators import CoursePaginator
 from .perms import IsOwnerOrReadOnly
 from .serializers import CourseSerializer, UserSerializer, StudyClassSerializer, StudyClassSerializerForUserOutCourse, \
     PostSerializer, CommentSerializer, ResultLearningSerializer, ScoreColumnSerializer, SemesterSerializer, \
-    StudyClassSerializerForGetStudyClass, PostSerializerForGetPost
+    StudyClassSerializerForGetStudyClass, PostSerializerForGetPost, ScoreInputSerializer
 from .models import Course, User, StudyClass, Post, Comment, ResultLearning, ScoreColumn, Semester
 from  rest_framework.decorators import action
 from reportlab.pdfgen import canvas
@@ -230,6 +230,19 @@ class StudyClassViewSet(viewsets.ModelViewSet, generics.ListAPIView):
         p = Post.objects.create(user_post=request.user, class_study=self.get_object(), content=request.data.get('content'))
         return Response(PostSerializer(p).data, status=status.HTTP_201_CREATED)
 
+    @action(detail=True, methods=['post'], url_path='input_scores')
+    def input_scores(self, request, pk=None):
+        study_class = self.get_object()
+        scores_data = request.data.get('scores')
+
+        for score_data in scores_data:
+            serializer = ScoreInputSerializer(data=score_data, context={'request': request, 'study_class': study_class})
+            if serializer.is_valid():
+                serializer.save()
+            else:
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response({"message": "Scores successfully inputted."}, status=status.HTTP_200_OK)
 
 class CommentViewSet(viewsets.ModelViewSet):
     queryset = Comment.objects.all()
@@ -252,6 +265,10 @@ class CommentViewSet(viewsets.ModelViewSet):
             post=parent_comment.post
         )
         return Response(CommentSerializer(reply).data, status=status.HTTP_201_CREATED)
+
+
+
+
 class ResultLearningViewSet(viewsets.ModelViewSet, generics.ListAPIView):
     queryset = ResultLearning.objects.filter(active=True).all()
     serializer_class = ResultLearningSerializer

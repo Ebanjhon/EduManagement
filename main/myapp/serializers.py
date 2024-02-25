@@ -1,3 +1,4 @@
+from django.core.validators import MinValueValidator, MaxValueValidator
 from rest_framework import serializers
 from .models import User, StudyClass, Semester, ScoreColumn, ResultLearning, Course, Post, Comment
 
@@ -124,3 +125,43 @@ class ResultLearningSerializer(serializers.ModelSerializer):
     class Meta:
         model = ResultLearning
         fields = ['midterm_score', 'final_score', 'score_columns', 'study_class', 'student']
+
+
+class ScoreColumnInputSerializer(serializers.Serializer):
+    column_name = serializers.CharField(max_length=50)
+    score = serializers.FloatField(validators=[MinValueValidator(0), MaxValueValidator(10)])
+
+class ScoreInputSerializer(serializers.Serializer):
+    student_id = serializers.IntegerField()
+    midterm_score = serializers.FloatField(validators=[MinValueValidator(0), MaxValueValidator(10)])
+    final_score = serializers.FloatField(validators=[MinValueValidator(0), MaxValueValidator(10)])
+    score_columns = ScoreColumnInputSerializer(many=True)
+
+    def create(self, validated_data):
+        student_id = validated_data.get('student_id')
+        midterm_score = validated_data.get('midterm_score')
+        final_score = validated_data.get('final_score')
+        score_columns_data = validated_data.get('score_columns')
+
+        # Sửa đổi ở đây: Thay thế Student bằng User
+        student = User.objects.get(id=student_id)  # Sử dụng User thay vì Student không định nghĩa
+        study_class = self.context['study_class']
+
+        # Tạo hoặc cập nhật ResultLearning
+        result_learning, created = ResultLearning.objects.update_or_create(
+            student=student,
+            study_class=study_class,
+            defaults={'midterm_score': midterm_score, 'final_score': final_score}
+        )
+
+        # Tạo hoặc cập nhật các ScoreColumn
+        for column_data in score_columns_data:
+            column_name = column_data['column_name']
+            score = column_data['score']
+            ScoreColumn.objects.update_or_create(
+                result_learning=result_learning,
+                name_column=column_name,  # Đảm bảo tên trường khớp với model
+                defaults={'score': score}
+            )
+
+        return result_learning
