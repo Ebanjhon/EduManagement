@@ -247,7 +247,9 @@ class StudyClassViewSet(viewsets.ModelViewSet, generics.ListAPIView):
 class CommentViewSet(viewsets.ModelViewSet):
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
-    permission_classes = [IsOwnerOrReadOnly, IsAuthenticated]
+    # permission_classes = [IsOwnerOrReadOnly, IsAuthenticated]
+    permission_classes = [permissions.AllowAny]
+
 
     def perform_create(self, serializer):
         # Tự động thêm user đăng nhập vào làm người tạo comment
