@@ -102,10 +102,17 @@ class PostSerializerForGetPost(serializers.ModelSerializer):
         fields = ['id', 'title', 'content', 'user_post']
 class CommentSerializer(serializers.ModelSerializer):
     user_comment = UserSerializer(read_only=True)
+    comment_child = serializers.SerializerMethodField()
 
     class Meta:
         model = Comment
         fields = '__all__'
+
+    def get_comment_child(self, obj):
+        # Lấy tất cả các comment con liên quan đến comment hiện tại
+        replies = obj.replies.all()
+        # Serialize các comment con
+        return CommentSerializer(replies, many=True, context=self.context).data
 
 class ScoreColumnSerializer(serializers.ModelSerializer):
     class Meta:
