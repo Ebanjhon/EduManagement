@@ -193,7 +193,12 @@ class StudyClassViewSet(viewsets.ModelViewSet, generics.ListAPIView):
         except User.DoesNotExist:
             return Response({"error": "Student not found in this class."}, status=status.HTTP_404_NOT_FOUND)
 
-        result_learnings = study_class.resultlearning_as_studyClass.filter(student=student)
+        result_learnings = study_class.resultlearning_as_studyClass.filter(student=student, is_draft=False)
+
+        # Kiểm tra nếu không có result_learning nào không phải là nháp
+        if not result_learnings.exists():
+            return Response({"error": "Không có kết quả học tập chính thức nào cho học sinh này."},
+                            status=status.HTTP_404_NOT_FOUND)
 
         serializer = ResultLearningSerializer(result_learnings, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -243,6 +248,22 @@ class StudyClassViewSet(viewsets.ModelViewSet, generics.ListAPIView):
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         return Response({"message": "Scores successfully inputted."}, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['post'], url_path='finalize_scores')
+    def finalize_scores(self, request, pk=None):
+        study_class = self.get_object()
+        # Cập nhật trạng thái is_draft của tất cả ResultLearning liên quan thành False
+        result_learnings_updated_count = study_class.resultlearning_as_studyClass.filter(is_draft=True).update(
+            is_draft=False)
+
+        # Kiểm tra nếu không có ResultLearning nào được cập nhật
+        if result_learnings_updated_count == 0:
+            return Response({"message": "Không có điểm số nào trong trạng thái nháp để cập nhật."},
+                            status=status.HTTP_404_NOT_FOUND)
+
+        return Response({
+                            "message": f"Tất cả điểm số đã được chuyển từ nháp sang chính thức. Số lượng cập nhật: {result_learnings_updated_count}"},
+                        status=status.HTTP_200_OK)
 
 class CommentViewSet(viewsets.ModelViewSet):
     queryset = Comment.objects.all()

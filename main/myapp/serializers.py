@@ -3,45 +3,6 @@ from rest_framework import serializers
 from .models import User, StudyClass, Semester, ScoreColumn, ResultLearning, Course, Post, Comment
 
 
-# class UserSerializer(serializers.ModelSerializer):
-#     avatar = serializers.SerializerMethodField(source='avatar')
-#
-#
-#     def get_avatar(self, User):
-#         request = self.context.get('request')
-#         if User.avatar:
-#             request = self.context.get('request')
-#             if request:
-#                 return request.build_absolute_uri('/static/%s' % User.avatar.name)
-#             return '/static/%s' % User.avatar.name
-#
-#     class Meta:
-#         model = User
-#         fields = ['id', 'id_user', 'username', 'first_name', 'last_name', 'email', 'password', 'avatar', 'role', 'birth_date',
-#                   'address']
-#         # fields = '__all__'
-#         extra_kwargs = {'password': {'write_only': True}}
-#
-#     def validate_email(self, value):
-#         """
-#         Kiểm tra định dạng email.
-#         """
-#         if not value.endswith('@ou.edu.vn'):
-#             raise serializers.ValidationError("Email không thuộc OU.edu VD: truongdaihocmo@ou.edu.vn")
-#         return value
-#
-#     def create(self, validated_data):
-#         """
-#                 Tạo user với role mặc định là STUDENT và kiểm tra avatar.
-#                 """
-#         validated_data['role'] = User.UserRole.STUDENT  # Thiết lập role mặc định là STUDENT
-#         # Thêm logic kiểm tra avatar tại đây nếu cần
-#         user = User.objects.create_user(**validated_data)
-#         user.set_password(validated_data['password'])
-#         user.save()
-#         return user
-#
-
 class UserSerializer(serializers.ModelSerializer):
     # Trường mới để tải lên avatar, không hiển thị trong phản hồi API (write_only=True)
     upload_avatar = serializers.ImageField(write_only=True, required=False)
@@ -77,7 +38,6 @@ class UserSerializer(serializers.ModelSerializer):
         user.set_password(validated_data['password'])
         user.save()
         return user
-
 
 class CourseSerializer(serializers.ModelSerializer):
     image = serializers.SerializerMethodField(source='image')
@@ -174,14 +134,12 @@ class ScoreInputSerializer(serializers.Serializer):
     midterm_score = serializers.FloatField(validators=[MinValueValidator(0), MaxValueValidator(10)])
     final_score = serializers.FloatField(validators=[MinValueValidator(0), MaxValueValidator(10)])
     score_columns = ScoreColumnInputSerializer(many=True)
-    is_draft =serializers.BooleanField()
 
     def create(self, validated_data):
         student_id = validated_data.get('student_id')
         midterm_score = validated_data.get('midterm_score')
         final_score = validated_data.get('final_score')
         score_columns_data = validated_data.get('score_columns')
-        is_draft = validated_data.get('is_draft')
 
         # Sửa đổi ở đây: Thay thế Student bằng User
         student = User.objects.get(id=student_id)  # Sử dụng User thay vì Student không định nghĩa
@@ -191,12 +149,8 @@ class ScoreInputSerializer(serializers.Serializer):
         result_learning, created = ResultLearning.objects.update_or_create(
             student=student,
             study_class=study_class,
-            defaults={'midterm_score': midterm_score, 'final_score': final_score, 'is_draft': is_draft}
+            defaults={'midterm_score': midterm_score, 'final_score': final_score}
         )
-        result_learning.is_draft = False
-        result_learning.save()
-
-
 
         # Tạo hoặc cập nhật các ScoreColumn
         for column_data in score_columns_data:
