@@ -60,7 +60,7 @@ class CourseViewSet(viewsets.ModelViewSet, generics.ListAPIView):
     queryset = Course.objects.filter(active=True).all()
     serializer_class = CourseSerializer
     pagination_class = CoursePaginator
-    # permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
 
 
 class PostViewSet(viewsets.ModelViewSet):
@@ -227,7 +227,7 @@ class StudyClassViewSet(viewsets.ModelViewSet, generics.ListAPIView):
 
     @action(methods=['post'], url_path='add_post', detail=True)
     def add_post(self, request, pk):
-        p = Post.objects.create(user_post=request.user, class_study=self.get_object(), content=request.data.get('content'))
+        p = Post.objects.create(user_post=request.user, class_study=self.get_object(), content=request.data.get('content'), title=request.data.get('title'))
         return Response(PostSerializer(p).data, status=status.HTTP_201_CREATED)
 
     @action(detail=True, methods=['post'], url_path='input_scores')
