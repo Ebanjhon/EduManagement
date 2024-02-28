@@ -198,7 +198,7 @@ class StudyClassViewSet(viewsets.ModelViewSet, generics.ListAPIView):
         # Kiểm tra nếu không có result_learning nào không phải là nháp
         if not result_learnings.exists():
             return Response({"error": "Không có kết quả học tập chính thức nào cho học sinh này."},
-                            status=status.HTTP_404_NOT_FOUND)
+                            status=status.HTTP_200_OK)
 
         serializer = ResultLearningSerializer(result_learnings, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -238,6 +238,15 @@ class StudyClassViewSet(viewsets.ModelViewSet, generics.ListAPIView):
     @action(detail=True, methods=['post'], url_path='input_scores')
     def input_scores(self, request, pk=None):
         study_class = self.get_object()
+
+
+        # kiem tra có phải tearcher k
+        if request.user != study_class.teacher:
+            return Response({"message": "Bạn không có quyền xuất bảng điểm cho lớp học này."},
+                            status=status.HTTP_403_FORBIDDEN)
+
+
+
         scores_data = request.data.get('scores')
 
         for score_data in scores_data:
@@ -252,6 +261,12 @@ class StudyClassViewSet(viewsets.ModelViewSet, generics.ListAPIView):
     @action(detail=True, methods=['post'], url_path='finalize_scores')
     def finalize_scores(self, request, pk=None):
         study_class = self.get_object()
+
+        # kiem tra có phải tearcher k
+        if request.user != study_class.teacher:
+            return Response({"message": "Bạn không có quyền xuất bảng điểm cho lớp học này."},
+                            status=status.HTTP_403_FORBIDDEN)
+
         # Cập nhật trạng thái is_draft của tất cả ResultLearning liên quan thành False
         result_learnings_updated_count = study_class.resultlearning_as_studyClass.filter(is_draft=True).update(
             is_draft=False)
@@ -268,8 +283,8 @@ class StudyClassViewSet(viewsets.ModelViewSet, generics.ListAPIView):
 class CommentViewSet(viewsets.ModelViewSet):
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
-    # permission_classes = [IsOwnerOrReadOnly, IsAuthenticated]
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [IsOwnerOrReadOnly, IsAuthenticated]
+    # permission_classes = [permissions.AllowAny]
 
 
     def perform_create(self, serializer):
