@@ -202,6 +202,34 @@ class StudyClassViewSet(viewsets.ModelViewSet, generics.ListAPIView):
 
         serializer = ResultLearningSerializer(result_learnings, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @action(methods=['get'], detail=True, url_path='get_list_student_results')
+    def get_list_student_results(self, request, pk=None):
+        study_class = self.get_object()
+
+        # Lấy tất cả các kết quả học tập trong lớp học
+        result_learnings = study_class.resultlearning_as_studyClass.filter(active=True)
+
+        # Tạo một từ điển để lưu trữ kết quả học tập của từng học sinh
+        student_results_dict = {}
+
+        # Lặp qua tất cả các kết quả học tập và tổ chức chúng theo học sinh
+        for result in result_learnings:
+            student = result.student
+            if student not in student_results_dict:
+                student_results_dict[student] = []
+            student_results_dict[student].append(ResultLearningSerializer(result).data)
+
+        # Serialize dữ liệu và trả về
+        serialized_data = []
+        for student, results in student_results_dict.items():
+            student_data = UserSerializer(student, context={'request': request}).data
+            student_data['results'] = results
+            serialized_data.append(student_data)
+
+        return Response(serialized_data, status=status.HTTP_200_OK)
+
+
     @action(methods=['get'], detail=True, url_path='get_teacher')
     def get_teacher(self, request, pk):
         # Lấy đối tượng StudyClass dựa trên khóa chính (pk) được cung cấp.
@@ -223,6 +251,9 @@ class StudyClassViewSet(viewsets.ModelViewSet, generics.ListAPIView):
         # Serialize thông tin của học sinh.
         serializer = UserSerializer(students, many=True, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+
 
     @action(methods=['get'], detail=True,  url_path='get_post')
     def get_post(self, request, pk):

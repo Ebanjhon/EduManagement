@@ -39,6 +39,7 @@ class UserSerializer(serializers.ModelSerializer):
         user.save()
         return user
 
+
 class CourseSerializer(serializers.ModelSerializer):
     image = serializers.SerializerMethodField(source='image')
 
