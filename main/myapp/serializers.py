@@ -123,8 +123,14 @@ class ResultLearningSerializer(serializers.ModelSerializer):
     score_columns = ScoreColumnSerializer(many=True, read_only=True)
     class Meta:
         model = ResultLearning
-        fields = ['midterm_score', 'final_score', 'score_columns', 'study_class', 'student']
+        fields = ['midterm_score', 'final_score', 'score_columns', 'study_class', 'student', 'is_draft']
 
+
+
+class ResultLearningSerializerForDraft(serializers.ModelSerializer):
+    class Meta:
+        model = ResultLearning
+        fields = ['is_draft']
 
 class ScoreColumnInputSerializer(serializers.Serializer):
     column_name = serializers.CharField(max_length=50)

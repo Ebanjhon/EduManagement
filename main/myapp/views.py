@@ -10,7 +10,8 @@ from .paginators import CoursePaginator
 from .perms import IsOwnerOrReadOnly
 from .serializers import CourseSerializer, UserSerializer, StudyClassSerializer, StudyClassSerializerForUserOutCourse, \
     PostSerializer, CommentSerializer, ResultLearningSerializer, ScoreColumnSerializer, SemesterSerializer, \
-    StudyClassSerializerForGetStudyClass, PostSerializerForGetPost, ScoreInputSerializer
+    StudyClassSerializerForGetStudyClass, PostSerializerForGetPost, ScoreInputSerializer, \
+    ResultLearningSerializerForDraft
 from .models import Course, User, StudyClass, Post, Comment, ResultLearning, ScoreColumn, Semester
 from  rest_framework.decorators import action
 from reportlab.pdfgen import canvas
@@ -190,15 +191,15 @@ class StudyClassViewSet(viewsets.ModelViewSet, generics.ListAPIView):
         study_class = self.get_object()
         try:
             student = study_class.students.get(id=student_id)
-        except User.DoesNotExist:
+        except student.DoesNotExist:
             return Response({"error": "Student not found in this class."}, status=status.HTTP_404_NOT_FOUND)
 
         result_learnings = study_class.resultlearning_as_studyClass.filter(student=student, is_draft=False)
-
+        result_learningsdraft = study_class.resultlearning_as_studyClass.filter(student=student, is_draft=True)
         # Kiểm tra nếu không có result_learning nào không phải là nháp
         if not result_learnings.exists():
-            return Response({"error": "Không có kết quả học tập chính thức nào cho học sinh này."},
-                            status=status.HTTP_200_OK)
+            serializer = ResultLearningSerializerForDraft(result_learningsdraft, many=True)
+            return Response({"error": "Studcd ent not found in this class."}, status=status.HTTP_200_OK)
 
         serializer = ResultLearningSerializer(result_learnings, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -207,17 +208,19 @@ class StudyClassViewSet(viewsets.ModelViewSet, generics.ListAPIView):
     def get_list_student_results(self, request, pk=None):
         study_class = self.get_object()
 
-        # Lấy tất cả các kết quả học tập trong lớp học
+        # Lấy tất cả sinh viên trong lớp học
+        students = study_class.students.all()
+
+        # Lấy tất cả các kết quả học tập trong lớp học và lọc những kết quả active
         result_learnings = study_class.resultlearning_as_studyClass.filter(active=True)
 
         # Tạo một từ điển để lưu trữ kết quả học tập của từng học sinh
-        student_results_dict = {}
+        student_results_dict = {student: [] for student in
+                                students}  # Khởi tạo mặc định là một list rỗng cho mỗi sinh viên
 
         # Lặp qua tất cả các kết quả học tập và tổ chức chúng theo học sinh
         for result in result_learnings:
             student = result.student
-            if student not in student_results_dict:
-                student_results_dict[student] = []
             student_results_dict[student].append(ResultLearningSerializer(result).data)
 
         # Serialize dữ liệu và trả về
